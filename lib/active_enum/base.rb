@@ -17,18 +17,18 @@ module ActiveEnum
       def value(enum_value)
         @values ||= []
 
-        id, name = id_and_name(enum_value)
+        id, name, description = id_and_name_and_description(enum_value)
         check_duplicate(id, name)
 
-        @values << [id, name]
-				sort_values! unless @order == :as_defined
+        @values << [id, name, description]
+        sort_values! unless @order == :as_defined
       end
 
       # order enum values using :asc or :desc
       #
-			def order(order)
-				@order = order
-			end
+      def order(order)
+        @order = order
+      end
 
       def all
         @values || []
@@ -42,8 +42,21 @@ module ActiveEnum
         @values.map {|v| v[1] }
       end
 
+      def descriptions
+        @values.map {|v| v[2] }
+      end
+
+      def description(index)
+        if index.is_a?(Fixnum)
+          row = lookup_by_id(index)
+        else
+          row = lookup_by_name(index)
+        end
+        row[2] if row
+      end
+
       def to_select
-				@values.map {|v| [v[1], v[0]] }
+        @values.map {|v| [(v[2] || v[1]), v[0]] }
       end
 
       def [](index)
@@ -66,9 +79,9 @@ module ActiveEnum
         @values.rassoc(index.to_s) || @values.rassoc(index.to_s.titleize)
       end
 
-      def id_and_name(hash)
+      def id_and_name_and_description(hash)
         if hash.has_key?(:id) || hash.has_key?(:name)
-          return (hash[:id] || next_id), hash[:name]
+          return (hash[:id] || next_id), hash[:name], hash[:description]
         elsif hash.keys.first.is_a?(Fixnum)
           return *Array(hash).first
         else
@@ -88,14 +101,14 @@ module ActiveEnum
         end
       end
 
-			def sort_values!
-				case (@order || :asc)
-				when :asc
-					@values.sort! {|a,b| a[0] <=> b[0] }
-				when :desc
-					@values.sort! {|a,b| b[0] <=> a[0] }
-				end
-			end
+      def sort_values!
+        case (@order || :asc)
+        when :asc
+          @values.sort! {|a,b| a[0] <=> b[0] }
+        when :desc
+          @values.sort! {|a,b| b[0] <=> a[0] }
+        end
+      end
 
     end
 
